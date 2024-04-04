@@ -4,6 +4,7 @@ Simulate UAV with rviz.
 ## Features
 - ROS2 humble support.
 - Simulate UAV with rviz.
+- A simple trajectory generator.
 - 2D and 3D mode.
     - 2D mode: UAV can only move in z-y plane with PD control.
     - 3D mode: UAV can move in x-y-z plane with SE3 control.
