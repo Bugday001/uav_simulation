@@ -1,0 +1,8 @@
+/uav_sim_node:
+  ros__parameters:
+
+    version: 1.1.1
+    se3/k_p: [ 9.6, 10.0, 11.2 ]
+    se3/k_v: [ 3.0, 3.0, 3.5 ]
+    se3/k_R: [ 10.0, 10.0, 10.0 ]
+    se3/k_w: [ 1.0, 1.0, 1.0 ]

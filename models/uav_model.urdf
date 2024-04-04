@@ -1,0 +1,109 @@
+<?xml version="1.0"?>
+<robot name="myrobot">
+  <!-- base link -->
+  <link name="base_link">
+      <visual>
+      <origin xyz="0 0 0.0" rpy="0 0 0"/>
+      <geometry>
+        <cylinder length="0.02" radius="0.04"/>
+      </geometry>
+    </visual>
+  </link>
+
+  <link name="Boom1"> 
+    <visual>
+        <origin xyz=" 0 0 0" rpy="0 0 0" />
+        <geometry>
+            <box size="0.03 0.45 0.01"/>
+        </geometry>
+        <material name="yellow">
+            <color rgba="1 0.4 0 1"/>
+        </material>
+    </visual>
+  </link>
+  <joint name="Boom1_joint" type="fixed">
+      <parent link="base_link" />
+      <child link="Boom1" />
+      <origin xyz="0 0 0"  rpy="0 0 0.785"/>
+  </joint>
+  <link name="Boom2"> 
+    <visual>
+        <origin xyz=" 0 0 0" rpy="0 0 0" />
+        <geometry>
+            <box size="0.03 0.45 0.01"/>
+        </geometry>
+        <material name="yellow">
+            <color rgba="1 0.4 0 1"/>
+        </material>
+    </visual>
+  </link>
+  <joint name="Boom2_joint" type="fixed">
+      <parent link="base_link" />
+      <child link="Boom2" />
+      <origin xyz="0 0 0"  rpy="0 0 -0.785"/>
+  </joint>
+  <link name="propeller1"> 
+    <visual>
+        <origin xyz=" 0 0 0" rpy="0 0 0" />
+        <geometry>
+            <cylinder length="0.01" radius="0.08"/>
+        </geometry>
+        <material name="blue1">
+            <color rgba="0 0.4 1 1"/>
+        </material>
+    </visual>
+  </link>
+  <joint name="propeller1_joint" type="fixed">
+      <parent link="base_link" />
+      <child link="propeller1" />
+      <origin xyz="0.159 0.159 0.01"  rpy="0 0 0"/>
+  </joint>
+    <link name="propeller2"> 
+    <visual>
+        <origin xyz=" 0 0 0" rpy="0 0 0" />
+        <geometry>
+            <cylinder length="0.01" radius="0.08"/>
+        </geometry>
+        <material name="blue1">
+            <color rgba="0 0.4 1 1"/>
+        </material>
+    </visual>
+  </link>
+  <joint name="propeller2_joint" type="fixed">
+      <parent link="base_link" />
+      <child link="propeller2" />
+      <origin xyz="-0.159 0.159 0.01"  rpy="0 0 0"/>
+  </joint>
+    <link name="propeller3"> 
+    <visual>
+        <origin xyz=" 0 0 0" rpy="0 0 0" />
+        <geometry>
+            <cylinder length="0.01" radius="0.08"/>
+        </geometry>
+        <material name="blue1">
+            <color rgba="0 0.4 1 1"/>
+        </material>
+    </visual>
+  </link>
+  <joint name="propeller3_joint" type="fixed">
+      <parent link="base_link" />
+      <child link="propeller3" />
+      <origin xyz="0.159 -0.159 0.01"  rpy="0 0 0"/>
+  </joint>
+    <link name="propeller4"> 
+    <visual>
+        <origin xyz=" 0 0 0" rpy="0 0 0" />
+        <geometry>
+            <cylinder length="0.01" radius="0.08"/>
+        </geometry>
+        <material name="blue1">
+            <color rgba="0 0.4 1 1"/>
+        </material>
+    </visual>
+  </link>
+  <joint name="propeller4_joint" type="fixed">
+      <parent link="base_link" />
+      <child link="propeller4" />
+      <origin xyz="-0.159 -0.159 0.01"  rpy="0 0 0"/>
+  </joint>
+</robot>
