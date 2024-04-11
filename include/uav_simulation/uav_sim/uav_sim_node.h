@@ -24,13 +24,15 @@ private:
     void publishTF();
     void ctrl_callback(const std_msgs::msg::Float64MultiArray::SharedPtr msg);
     void goal_callback(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
+    void publishPlannerTarget(const std::vector<Eigen::Vector3d>& pva);
     void testCtrl();
+    void staticCtrl();
     double m, kf, g;
     Quadrotor quad_;
     Quadrotor::State quad_state_;
     std::shared_ptr<Controller> my_ctrl;
     rclcpp::TimerBase::SharedPtr timer_;
-    rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr publisher_;
+    rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr publisher_, plan_odom_pub_;
     rclcpp::Subscription<std_msgs::msg::Float64MultiArray>::SharedPtr ctrl_sub_;
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
     std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;

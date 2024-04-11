@@ -29,6 +29,7 @@ public:
     void position_kinematical();
     void getTuaF();
     void setInput(const Eigen::Vector4d &u);
+    void setExternalForce(const Eigen::Vector3d &external_force);
     void step(double t);
     double getMass() { return m; }
     double getGravity() { return g; }
@@ -36,12 +37,10 @@ public:
     double getPhi() { return phi; }
     double getPhi_dot() { return phi_dot_; }
     void updateState();
+    void initState(const Eigen::Vector3d &init_state);
     State getState();
 
 private:
-    double x, y, z;
-    double v_x, v_y, v_z;
-    double v_x_dot, v_y_dot, v_z_dot;
     double c_T, c_M;  //拉力系数，力矩系数
     double dt_;
     double d;  //螺旋桨离中心距离
@@ -59,6 +58,7 @@ private:
     double phi_dot_, theta_dot_, psi_dot_;
     Quadrotor::State state_;
     Eigen::Matrix3d R_y_pi;
+    Eigen::Vector3d external_force_;
 };
 
 #endif

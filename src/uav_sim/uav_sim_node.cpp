@@ -4,21 +4,23 @@
 QuadrotorSimulator::QuadrotorSimulator(): Node("quadrotor_simulator_so3") {
     getParams();
     my_ctrl = std::make_shared<Controller>(params_);
+    quad_.initState(Eigen::Vector3d(0,0,1));
     quad_state_ = quad_.getState();
     m = quad_.getMass();
     g = quad_.getGravity();
     kf = quad_.getCT();
 
-    simple_traj_.setParams(2.5, 2.5);
+    simple_traj_.setParams(1.5, 1.5, 1.0);
     Eigen::Vector3d start_point(0, 0, 0);
     Eigen::Vector3d end_point(0, 2, 1);
     std::vector<Eigen::Vector3d> way_points;
     way_points.push_back(start_point);
     way_points.push_back(end_point);
-    simple_traj_.setWayPoints(way_points);
+    simple_traj_.setWayPoints(way_points, Eigen::Vector2d());
     planner_start_time_ = -1;
 
     publisher_ = this->create_publisher<nav_msgs::msg::Odometry>("odom", 10);
+    plan_odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("target_odom", 10);
     ctrl_sub_ = this->create_subscription<std_msgs::msg::Float64MultiArray>("ctrl_cmd_", 10, 
                 std::bind(&QuadrotorSimulator::ctrl_callback, this, std::placeholders::_1));
     goal_sub_ = this->create_subscription<geometry_msgs::msg::PoseStamped>("/goal_pose", 10, 
@@ -42,8 +44,8 @@ void QuadrotorSimulator::getParams() {
     params_.k_v = Eigen::Vector3d(k_v[0], k_v[1], k_v[2]);
     params_.k_R = Eigen::Vector3d(k_R[0], k_R[1], k_R[2]);
     params_.k_w = Eigen::Vector3d(k_w[0], k_w[1], k_w[2]);
+    std::cout<<"k_p: "<<params_.k_p.transpose()<<std::endl;
     std::cout<<"k_v: "<<params_.k_v.transpose()<<std::endl;
-    std::cout<<"k_v: "<<params_.k_p.transpose()<<std::endl;
     std::cout<<"k_R: "<<params_.k_R.transpose()<<std::endl;
     std::cout<<"k_w: "<<params_.k_w.transpose()<<std::endl;
 }
@@ -53,7 +55,13 @@ void QuadrotorSimulator::goal_callback(const geometry_msgs::msg::PoseStamped::Sh
     std::vector<Eigen::Vector3d> way_points;
     way_points.push_back(quad_state_.x);
     way_points.push_back(goal_point);
-    simple_traj_.setWayPoints(way_points);
+    // 提取四元数
+    const auto& quaternion = msg->pose.orientation;
+    // 从四元数计算航向角（yaw）
+    double roll, pitch, yaw;
+    tf2::Quaternion tf_quaternion(quaternion.x, quaternion.y, quaternion.z, quaternion.w);
+    tf2::Matrix3x3(tf_quaternion).getRPY(roll, pitch, yaw);
+    simple_traj_.setWayPoints(way_points, Eigen::Vector2d(quad_state_.angle_zxy(0), yaw));
     planner_start_time_ = -1;
 }
 
@@ -73,6 +81,7 @@ void QuadrotorSimulator::ctrl_callback(const std_msgs::msg::Float64MultiArray::S
 void QuadrotorSimulator::rospubTimerCallback() {
     quad_state_ = quad_.getState();
     testCtrl();
+    // staticCtrl();
     static int cnt = 0;
     if(cnt>2) {
         publishOdometry();
@@ -102,11 +111,37 @@ void QuadrotorSimulator::publishOdometry() {
     publisher_->publish(msg);
     // std::cout << quad_state_.x(2) << ", " << quad_state_.v(2) << std::endl;
 }
+
+void QuadrotorSimulator::publishPlannerTarget(const std::vector<Eigen::Vector3d>& pva) {
+    auto msg = nav_msgs::msg::Odometry();
+    // Fill the message fields with your data
+    msg.header.stamp = this->get_clock()->now();
+    msg.header.frame_id = "world";
+    msg.pose.pose.position.x = pva[0](0);
+    msg.pose.pose.position.y = pva[0](1);
+    msg.pose.pose.position.z = pva[0](2);
+    tf2::Quaternion q;
+    tf2::Matrix3x3 m;
+    m.setRPY(0, 0, pva[3](0));
+    m.getRotation(q);
+    msg.pose.pose.orientation.x = q.x();
+    msg.pose.pose.orientation.y = q.y();
+    msg.pose.pose.orientation.z = q.z();
+    msg.pose.pose.orientation.w = q.w();
+    msg.twist.twist.linear.x = pva[1](0);
+    msg.twist.twist.linear.y = pva[1](1);
+    msg.twist.twist.linear.z = pva[1](2);
+    plan_odom_pub_->publish(msg);
+}
+
 void QuadrotorSimulator::testCtrl() {
-    std::vector<Eigen::Vector3d> pva(3, Eigen::Vector3d());
+    std::vector<Eigen::Vector3d> pva(4);
+    static double last_sec = -1;
     double cur_sec = this->now().seconds();
     if(planner_start_time_==-1) {
         planner_start_time_ = cur_sec;
+        last_sec = cur_sec;
+        return;
     }
     if(simple_traj_.getPVA(pva, cur_sec-planner_start_time_)) {
         // RCLCPP_INFO(this->get_logger(), "Planner finished!");
@@ -116,13 +151,30 @@ void QuadrotorSimulator::testCtrl() {
     cur_pva.push_back(quad_state_.v);
     cur_pva.push_back(quad_state_.acc);
     my_ctrl->setState(cur_pva, quad_state_.R, quad_state_.angle_zxy, quad_state_.angle_dot_zxy);
-    double dt = 0.01;
+    double dt = cur_sec - last_sec;
+    last_sec = cur_sec;
     // my_ctrl->controller2D(Eigen::Vector3d(pva[0](1), pva[1](1), pva[2](1)), Eigen::Vector3d(pva[0](2), pva[1](2), pva[2](2)));
     my_ctrl->controllerSE3(pva);
-    Eigen::Vector4d motor_rpm = my_ctrl->getRpm();//Eigen::Vector4d(rpm, rpm*1.02, rpm, rpm*1.02);
+    Eigen::Vector4d motor_rpm = my_ctrl->getRpm();
     quad_.setInput(motor_rpm);
     quad_.step(dt);
-    //End for tes
+    publishPlannerTarget(pva);
+}
+
+void QuadrotorSimulator::staticCtrl() {
+    static double last_sec = -1;
+    double cur_sec = this->now().seconds();
+    if(last_sec == -1) {
+        last_sec = cur_sec;
+    }
+    double rpm = 0.0;
+    double df = 0;
+    if(cur_sec-last_sec > 5.2)
+        df = 0.01 * sin((cur_sec-last_sec)/2);
+    quad_.setExternalForce(Eigen::Vector3d(df, df, 0));
+    Eigen::Vector4d motor_rpm = Eigen::Vector4d(557.142 +rpm, 557.142 +rpm, 557.142 +rpm, 557.142 +rpm);
+    quad_.setInput(motor_rpm);
+    quad_.step(0.01);
 }
 
 void QuadrotorSimulator::publishTF()

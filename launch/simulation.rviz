@@ -9,7 +9,9 @@ Panels:
         - /RobotModel1/Mass Properties1
         - /RobotModel1/Description Topic1
         - /TF1/Frames1
-      Splitter Ratio: 0.5
+        - /Odometry2
+        - /Odometry2/Shape1
+      Splitter Ratio: 0.5698005557060242
     Tree Height: 678
   - Class: rviz_common/Selection
     Name: Selection
@@ -67,7 +69,7 @@ Visualization Manager:
           Scale: 1
           Value: true
         Value: true
-      Enabled: false
+      Enabled: true
       Keep: 1
       Name: Odometry
       Position Tolerance: 0.10000000149011612
@@ -88,7 +90,7 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /odom
-      Value: false
+      Value: true
     - Alpha: 1
       Class: rviz_default_plugins/RobotModel
       Collision Enabled: false
@@ -193,6 +195,45 @@ Visualization Manager:
               {}
       Update Interval: 0
       Value: true
+    - Angle Tolerance: 0.10000000149011612
+      Class: rviz_default_plugins/Odometry
+      Covariance:
+        Orientation:
+          Alpha: 0.5
+          Color: 255; 255; 127
+          Color Style: Unique
+          Frame: Local
+          Offset: 1
+          Scale: 1
+          Value: true
+        Position:
+          Alpha: 0.30000001192092896
+          Color: 204; 51; 204
+          Scale: 1
+          Value: true
+        Value: true
+      Enabled: true
+      Keep: 1
+      Name: Odometry
+      Position Tolerance: 0.10000000149011612
+      Shape:
+        Alpha: 1
+        Axes Length: 1
+        Axes Radius: 0.10000000149011612
+        Color: 0; 255; 0
+        Head Length: 0.30000001192092896
+        Head Radius: 0.10000000149011612
+        Shaft Length: 0.5
+        Shaft Radius: 0.05000000074505806
+        Value: Arrow
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /target_odom
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -239,25 +280,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 6.275715351104736
+      Distance: 5.522629737854004
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.5717837810516357
-        Y: 0.4338146150112152
-        Z: 0.6325393915176392
+        X: 0.2378976196050644
+        Y: 0.3028911054134369
+        Z: 0.7880310416221619
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5303975343704224
+      Pitch: 0.6353975534439087
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.09857177734375
+      Yaw: 2.933572292327881
     Saved: ~
 Window Geometry:
   Displays:

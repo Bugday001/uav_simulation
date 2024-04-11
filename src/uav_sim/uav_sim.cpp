@@ -1,16 +1,11 @@
 #include "uav_simulation/uav_sim/uav_sim.h"
+
 Quadrotor::Quadrotor() {
     m = 1.4; //kg
     g = 9.8; //m/s^2
     phi = 0.0; //rad
     theta = 0.0; //rad
     psi = 0.0; //rad
-    x = 0.0;
-    y = 0.0;
-    z = 0.0;
-    v_x = 0.0; //m/s
-    v_y = 0.0; //m/s
-    v_z = 0.0; //m/s
     c_T = 1.105e-05;
     c_M = 1.779e-07*2;
     d = 0.225;
@@ -19,6 +14,14 @@ Quadrotor::Quadrotor() {
     I_zz = 0.0366;      // 四旋翼z轴转动惯量(kg·m^2)
     J_RP = 0.0001287;   // 整个电机转子和螺旋桨绕转轴的总转动惯量(kg·m^2)
     R_y_pi << -1, 0, 0, 0, 1, 0, 0, 0, -1;
+    external_force_.setZero();
+    state_.x.setZero();
+    state_.v.setZero();
+    state_.acc.setZero();
+}
+
+void Quadrotor::initState(const Eigen::Vector3d &init_state) {
+    state_.x = init_state;
 }
 
 /**
@@ -43,12 +46,13 @@ Quadrotor::Quadrotor() {
  *   其中，↑表示螺旋桨逆时针旋转；↓表示螺旋桨顺时针旋转。
 */
 void Quadrotor::position_dynamical() {
-    v_x_dot = f * (1/m) * (cos(psi) * sin(theta) * cos(phi) + sin(psi) * sin(phi));
-    v_y_dot = f * (1/m) * (sin(psi) * sin(theta) * cos(phi) - cos(psi) * sin(phi));
-    v_z_dot = -g + f * (1/m) * cos(phi) * cos(theta);
-    v_x += v_x_dot * dt_;
-    v_y += v_y_dot * dt_;
-    v_z += v_z_dot * dt_;
+    double resistance = 0.1 *                                        // C
+                        M_PI * (d) * (d) * // S
+                        state_.v.norm() * state_.v.norm();
+    Eigen::Vector3d v_norm = state_.v.normalized();
+    state_.acc = -Eigen::Vector3d(0, 0, g) + f * state_.R.col(2) / m +
+                external_force_ / m - resistance * v_norm / m;
+    state_.v += state_.acc * dt_;
     
 }
 
@@ -93,9 +97,7 @@ void Quadrotor::attitude_dynamical() {
  * 位置运动学微分方程组，通过四旋翼的速度计算得到四旋翼的位置
 */
 void Quadrotor::position_kinematical() {
-    x += v_x * dt_;
-    y += v_y * dt_;
-    z += v_z * dt_;
+    state_.x += state_.v * dt_;
 }
 
 /**
@@ -163,6 +165,10 @@ void Quadrotor::setInput(const Eigen::Vector4d &u) {
     w4 = u(3);
 }
 
+void Quadrotor::setExternalForce(const Eigen::Vector3d &external_force) {
+    external_force_ = external_force;
+}
+
 void Quadrotor::step(double t) {
     dt_ = t;
     getTuaF();
@@ -174,15 +180,6 @@ void Quadrotor::step(double t) {
 }
 
 void Quadrotor::updateState() {
-    state_.x(0) = x;
-    state_.x(1) = y;
-    state_.x(2) = z;
-    state_.v(0) = v_x;
-    state_.v(1) = v_y;
-    state_.v(2) = v_z;
-    state_.acc(0) = v_x_dot;
-    state_.acc(1) = v_y_dot;
-    state_.acc(2) = v_z_dot;
     state_.angle_zxy(0) = psi;
     state_.angle_zxy(1) = phi;
     state_.angle_zxy(2) = theta;

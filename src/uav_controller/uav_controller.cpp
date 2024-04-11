@@ -10,6 +10,9 @@ Controller::Controller(Params params) {
     m_ = 1.4;
 }
 
+/**
+ * 混控器
+*/
 void Controller::hybridController(const Eigen::Vector4d& forces) {
     double k1 = 1/(4 * c_m_ * c_t_ * d_);
     double kf = c_m_ * d_ * forces(0);
@@ -54,7 +57,8 @@ void Controller::controllerSE3(std::vector<Eigen::Vector3d> pva_des) {
     // 以下计算u2 u3 u4 Eigen::Vector3d b1_des;
     Eigen::Vector3d angle_zxy = state_.angle_zxy;
     Eigen::Vector3d z_b_des = F / F.norm();
-    Eigen::Vector3d x_c_des(cos(angle_zxy(0)), sin(angle_zxy(0)), 0);
+    double target_yaw = pva_des[3](0);
+    Eigen::Vector3d x_c_des(cos(target_yaw), sin(target_yaw), 0);
     Eigen::Vector3d y_c_des = z_b_des.cross(x_c_des).normalized();
     Eigen::Matrix3d R_c_b = Eigen::Matrix3d::Zero();  //期望的旋转矩阵
     R_c_b.col(0) = x_c_des;
@@ -66,10 +70,12 @@ void Controller::controllerSE3(std::vector<Eigen::Vector3d> pva_des) {
     Eigen::Vector3d angle_err(angle_err_matrix(2,1), angle_err_matrix(0,2), angle_err_matrix(1,0));
     
     // TODO: 角速度误差，机体坐标系下实际角速度和期望角速度的差
+    Eigen::Vector3d yaw_des(Eigen::Vector3d::Zero());
+    yaw_des[2] = pva_des[3](1);
     Eigen::Vector3d angle_dot_xyz(state_.angle_dot_zxy(1), state_.angle_dot_zxy(2), state_.angle_dot_zxy(0));
-    Eigen::Vector3d angle_dot_err = angle_dot_xyz;// - pva_des[2];
+    Eigen::Vector3d angle_dot_err = angle_dot_xyz - R_c_b.transpose() * R * yaw_des;
     forces.tail(3) = -angle_err.cwiseProduct(params_.k_R) - angle_dot_err.cwiseProduct(params_.k_w)
-                    + angle_dot_xyz.cross(angle_dot_xyz);;
+                    + angle_dot_xyz.cross(angle_dot_xyz);
     hybridController(forces);
 }
 
